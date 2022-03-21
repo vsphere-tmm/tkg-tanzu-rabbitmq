@@ -1,0 +1,26 @@
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: SchemaReplication
+metadata:
+  name: upstream
+spec:
+  endpoints: "10.156.144.7:5672" 
+  upstreamSecret:
+    name: rabbitmq-replicator
+  rabbitmqClusterReference:
+    name: upstream
+
+---
+apiVersion: rabbitmq.tanzu.vmware.com/v1beta1
+kind: StandbyReplication
+metadata:
+  name: upstream
+spec:
+  operatingMode: "upstream" # has to be "upstream" to configure an upstream RabbitMQ cluster; required value
+  upstreamModeConfiguration: # list of policies that Operator will create
+    replicationPolicies:
+      - name: all-queues-in-default # policy name; required value
+        pattern: "^.*" # any regex expression that will be used to match quorum queues name; required value
+        vhost: "/" # vhost name; must be an existing vhost; required value
+  rabbitmqClusterReference:
+    name: upstream

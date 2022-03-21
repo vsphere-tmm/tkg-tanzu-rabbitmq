@@ -1,0 +1,63 @@
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: downstream
+spec:
+  imagePullSecrets:
+  - name: tanzu-rabbitmq-registry-creds
+  replicas: 3
+  service:
+    type: LoadBalancer
+  rabbitmq:
+    additionalPlugins:
+      - rabbitmq_stream
+      - rabbitmq_stream_management
+      - rabbitmq_schema_definition_sync
+      - rabbitmq_schema_definition_sync_prometheus # optional
+      - rabbitmq_standby_replication
+    additionalConfig: |
+      schema_definition_sync.operating_mode = downstream
+      standby.replication.operating_mode = downstream
+      schema_definition_sync.downstream.locals.users = ^default_user_
+      schema_definition_sync.downstream.locals.global_parameters = ^standby
+      schema_definition_sync.downstream.minimum_sync_interval = 15
+      standby.replication.retention.size_limit.messages = 5000000000
+      cluster_partition_handling = pause_minority
+      vm_memory_high_watermark_paging_ratio = 0.99
+      disk_free_limit.relative = 1.0
+      collect_statistics_interval = 10000
+  persistence:
+    storageClassName: default
+    storage: "50Gi"
+
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Vhost
+metadata:
+  name: schema-replication
+spec:
+  name: "rabbitmq_schema_definition_sync" # name of the vhost
+  rabbitmqClusterReference:
+    name: downstream
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-replicator
+type: Opaque
+stringData:
+  username: rabbitmq-replicator
+  password: test
+
+---      
+apiVersion: rabbitmq.com/v1beta1
+kind: User
+metadata:
+  name: rabbitmq-replicator
+spec:
+  rabbitmqClusterReference:
+    name: downstream
+  importCredentialsSecret:
+    name: rabbitmq-replicator

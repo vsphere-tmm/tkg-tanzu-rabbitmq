@@ -1,0 +1,41 @@
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: SchemaReplication
+metadata:
+  name: downstream
+spec:
+  endpoints: "10.156.144.7:5672" 
+  upstreamSecret:
+    name: rabbitmq-replicator
+  rabbitmqClusterReference:
+    name: downstream
+
+---
+apiVersion: rabbitmq.tanzu.vmware.com/v1beta1
+kind: StandbyReplication
+metadata:
+  name: downstream
+spec:
+  operatingMode: "downstream" # has to be "upstream" to configure an upstream RabbitMQ cluster; required value
+  downstreamModeConfiguration: 
+    endpoints: "10.156.144.7:5552" # list of policies that Operator will create
+    upstreamSecret:
+      name: rabbitmq-replicator 
+  rabbitmqClusterReference:
+    name: downstream
+
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: Permission
+metadata:
+  name: rabbitmq-replicator.defaultvhost.all
+spec:
+  vhost: "rabbitmq_schema_definition_sync" # name of a vhost
+  userReference:
+    name: "rabbitmq-replicator" # name of a user.rabbitmq.com in the same namespace; must specify either spec.userReference or spec.user
+  permissions:
+    write: ".*"
+    configure: ".*"
+    read: ".*"
+  rabbitmqClusterReference:
+    name: downstream

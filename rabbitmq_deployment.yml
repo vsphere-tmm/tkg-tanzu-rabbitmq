@@ -1,0 +1,40 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: production
+  namespace: rabbitmq-system
+spec:
+  imagePullSecrets:
+  - name: tanzu-rabbitmq-registry-creds
+  replicas: 3
+  resources:
+    requests:
+      cpu: 16
+      memory: 64Gi
+    limits:
+      cpu: 16
+      memory: 64Gi
+  rabbitmq:
+    additionalPlugins:
+      - rabbitmq_stream
+      - rabbitmq_schema_definition_sync
+      - rabbitmq_schema_definition_sync_prometheus # optional
+      - rabbitmq_standby_replication
+    additionalConfig: |
+      cluster_partition_handling = pause_minority
+      vm_memory_high_watermark_paging_ratio = 0.99
+      disk_free_limit.relative = 1.0
+      collect_statistics_interval = 10000
+  persistence:
+    storageClassName: default
+    storage: "500Gi"
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+            - key: app.kubernetes.io/name
+              operator: In
+              values:
+              - production-ready
+        topologyKey: kubernetes.io/hostname

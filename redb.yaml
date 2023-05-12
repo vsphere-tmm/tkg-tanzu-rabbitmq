@@ -1,0 +1,9 @@
+apiVersion: app.redislabs.com/v1alpha1
+kind: RedisEnterpriseDatabase
+metadata:
+  name: redb
+spec:
+  memorySize: 10GB
+  redisEnterpriseCluster:
+    name: rec
+ 

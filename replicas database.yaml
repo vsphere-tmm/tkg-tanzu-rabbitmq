@@ -1,0 +1,10 @@
+apiVersion: app.redislabs.com/v1alpha1
+kind: RedisEnterpriseDatabase
+metadata:
+   name: name-of-replica
+spec:
+   redisEnterpriseCluster:
+      name: name-of-cluster
+   replicaSources:
+   - replicaSourceType: SECRET
+     replicaSourceName: my-replica-source
